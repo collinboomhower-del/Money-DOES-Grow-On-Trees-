@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    @media (max-width: 768px) {
+      .bottom-dock { display: none; }
+      header { padding: 8px 10px; gap: 8px; }
+      .title-brand h1 { font-size: 0.95rem; }
+      .nav-buttons { flex-wrap: wrap; justify-content: flex-end; }
+      .btn-ui { padding: 5px 9px; font-size: 0.7rem; }
+      .hud-card { padding: 4px 10px; }
+      .hud-value { font-size: 0.85rem; }
+    }
+  </style>
+  <title>Money DOES Grow on Trees! - Unlocks & Minimap Radar Edition</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #86efac;
+      color: #0f172a;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    #ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .interactive {
+      pointer-events: auto;
+    }
+
+    .top-ui-stack {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    header {
+      width: 100%;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 2px solid rgba(34, 197, 94, 0.3);
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .title-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-brand .logo-icon {
+      font-size: 1.6rem;
+      filter: drop-shadow(0 2px 6px rgba(34, 197, 94, 0.4));
+    }
+
+    .title-brand h1 {
+      font-size: 1.25rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #15803d, #047857);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.2px;
+    }
+
+    .hud-metrics {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hud-card {
+      background: #ffffff;
+      border: 2px solid #fde047;
+      padding: 6px 16px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(250, 204, 21, 0.25);
+    }
+
+    .hud-label {
+      font-size: 0.68rem;
+      color: #b45309;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .hud-value {
+      font-size: 1.05rem;
+      color: #0f172a;
+      font-weight: 900;
+      font-family: 'Courier New', monospace;
+    }
+
+    .hud-keys { border-color: #38bdf8; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25); }
+    .hud-keys .hud-label { color: #0284c7; }
+
+    .hud-time { border-color: #c084fc; box-shadow: 0 4px 12px rgba(192, 132, 252, 0.25); }
+    .hud-time .hud-label { color: #7e22ce; }
+
+    .nav-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn-ui {
+      background: #f0fdf4;
+      border: 2px solid #4ade80;
+      color: #15803d;
+      padding: 7px 15px;
+      border-radius: 14px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 3px 8px rgba(34, 197, 94, 0.15);
+    }
+
+    .btn-ui:hover {
+      background: #22c55e;
+      color: #ffffff;
+      border-color: #16a34a;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+    }
+
+    .btn-ui.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+
+    .cant-afford-flash {
+      position: fixed;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ef4444;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-weight: 900;
+      z-index: 200;
+      transition: opacity 0.4s;
+    }
+
+    .btn-upgrade-highlight {
+      background: linear-gradient(135deg, #facc15, #f59e0b);
+      color: #78350f;
+      border-color: #fef08a;
+      animation: pulseGlow 2s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .ticker-container {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.88);
+      border-bottom: 2px solid rgba(34, 197, 94, 0.2);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      height: 32px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+    }
+
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      will-change: transform;
+      animation: marquee 30s linear infinite;
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 28px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #166534;
+      border-right: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .ticker-badge {
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 900;
+    }
+
+    .trend-up { color: #15803d; background: #dcfce7; border: 1px solid #86efac; }
+    .trend-down { color: #b91c1c; background: #ffe4e6; border: 1px solid #fca5a5; }
+
+    .bottom-dock {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .controls-pill {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border: 2px solid #4ade80;
+      padding: 8px 24px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #14532d;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    }
+
+    .controls-pill kbd {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 0.75rem;
+    }
+
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.5);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border: 3px solid #4ade80;
+      border-radius: 24px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 82vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 { color: #15803d; font-size: 1.4rem; font-weight: 900; }
+
+    .btn-close {
+      background: #ffe4e6;
+      border: 2px solid #fca5a5;
+      color: #e11d48;
+      font-weight: bold;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .card-item {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-item.unlocked { border-color: #facc15; background: #fefce8; }
+    .card-title { font-weight: 900; color: #0f172a; font-size: 1rem; }
+    .card-desc { font-size: 0.85rem; color: #475569; line-height: 1.4; }
+
+    #achievement-toast {
+      position: absolute;
+      top: 105px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-160px);
+      background: #ffffff;
+      border: 3px solid #facc15;
+      border-radius: 9999px;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 90;
+      pointer-events: none;
+    }
+
+    #achievement-toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-overlay">
+      <div class="top-ui-stack interactive">
+        <header>
+          <div class="title-brand">
+            <span class="logo-icon">💵</span>
+            <h1>Money DOES Grow on Trees!</h1>
+          </div>
+
+          <div class="hud-metrics">
+            <div class="hud-card hud-time">
+              <div class="hud-label">DAY CYCLE</div>
+              <div id="day-display" class="hud-value">☀️ SUNNY DAY</div>
+            </div>
+            <div class="hud-card hud-keys">
+              <div class="hud-label">KEYS</div>
+              <div id="keys-display" class="hud-value">🔑 0</div>
+            </div>
+            <div class="hud-card">
+              <div class="hud-label">NET CASH</div>
+              <div id="money-display" class="hud-value">$0</div>
+            </div>
+          </div>
+
+          <div class="nav-buttons">
+            <button id="btn-upgrades" class="btn-ui btn-upgrade-highlight" aria-label="Open upgrades">⚡ Upgrades</button>
+            <button id="btn-achievements" class="btn-ui" aria-label="Open achievements">🏆 Trophies</button>
+            <button id="btn-relics" class="btn-ui" aria-label="Open relics">👑 Relics</button>
+            <button id="btn-pets" class="btn-ui" aria-label="Open pets">🐶 Pets</button>
+            <button id="btn-fullscreen" class="btn-ui" aria-label="Toggle fullscreen">⛶ Fullscreen</button>
+            <button id="music-toggle" class="btn-ui" aria-label="Toggle sound">🔊 Sound</button>
+          </div>
+        </header>
+
+        <div class="ticker-container">
+          <div class="ticker-track" id="ticker-track"></div>
+        </div>
+      </div>
+
+      <div class="bottom-dock">
+        <div class="controls-pill interactive">
+          <span>🎮 Move: <kbd>WASD</kbd> / <kbd>Arrows</kbd></span>
+          <span>🔒 Walk up to Locked Trees (🔒) on map to buy!</span>
+          <span>🏛️ Vault: <kbd>Center</kbd></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="achievement-toast">
+      <div style="font-size: 1.8rem;">🏆</div>
+      <div>
+        <div style="font-size: 0.65rem; color: #b45309; font-weight: 900; letter-spacing: 0.8px;">MILESTONE UNLOCKED!</div>
+        <div id="toast-text" style="font-size: 0.95rem; color: #0f172a; font-weight: 900;">First Cash Harvest</div>
+      </div>
+    </div>
+
+    <div id="modal-upgrades" class="modal-overlay interactive">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>⚡ Empire Farm Upgrades</h2>
+          <button class="btn-close" onclick="closeModals()">✕</button>
+        </div>
+        <div class="grid-container" id="upgrades-list"></div>
+      </div>
+    </div>
+
+    <div id="modal-achievements" class="modal-overlay interactive">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🏆 Trophies & Milestones</h2>
+          <button class="btn-close" onclick="closeModals()">✕</button>
+        </div>
+        <div class="grid-container" id="achievements-list"></div>
+      </div>
+    </div>
+
+    <div id="modal-relics" class="modal-overlay interactive">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>👑 Relic Collection</h2>
+          <button class="btn-close" onclick="closeModals()">✕</button>
+        </div>
+        <div class="grid-container" id="relics-list"></div>
+      </div>
+    </div>
+
+    <div id="modal-pets" class="modal-overlay interactive">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🐶 Farm Pets & Companions</h2>
+          <button class="btn-close" onclick="closeModals()">✕</button>
+        </div>
+        <div class="grid-container" id="pets-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
